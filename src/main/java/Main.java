@@ -1,10 +1,11 @@
-import com.jcraft.jsch.ChannelExec;
-import com.jcraft.jsch.JSch;
-import com.jcraft.jsch.JSchException;
-import com.jcraft.jsch.Session;
+import com.jcraft.jsch.*;
 
 import java.io.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
 import java.util.Properties;
+import java.util.zip.ZipFile;
 
 public class Main
 {
@@ -18,12 +19,67 @@ public class Main
 
         main.extractProperties();
 
-        Session session = null;
-        ChannelExec channelExec = null;
+        // TODO copy the folder from local to remote machine
+        try {
+            JSch jsch = new JSch();
+            Session session = jsch.getSession(main.username, main.IPadress);
+            session.setPassword(main.password);
+            java.util.Properties config = new java.util.Properties();
+            config.put("StrictHostKeyChecking", "no");
+            config.put("PreferredAuthentications",
+                    "publickey,keyboard-interactive,password");
+
+            session.setConfig(config);
+            session.connect();
+            Channel channel = session.openChannel("sftp");
+            channel.connect();
+            System.out.println("sftp channel opened and connected.");
+            ChannelSftp channelSftp = (ChannelSftp) channel;
+
+            String sftpDirectory = "/home/jnruppenthal/Desktop/";
+
+//            File directory = new File("C:\\Users\\janru\\PycharmProjects\\TestCodeForCodeBubblesAR");
+//            File[] fList = directory.listFiles();
+//
+//            for (File file : fList){
+//                if (file.isFile()){
+//                    String filename=file.getAbsolutePath();
+//                    channelSftp.put(filename, sftpDirectory, ChannelSftp.OVERWRITE);
+//                    System.out.println(filename + " transferred to " + sftpDirectory );
+//                }
+//            }
+
+//            listf("C:\\Users\\janru\\PycharmProjects\\TestCodeForCodeBubblesAR", channelSftp, sftpDirectory, sftpDirectory);
+
+            ZipFile zipFile = new ZipFile("C:\\Users\\janru\\PycharmProjects\\TestCodeForCodeBubblesAR.zip");
+            ArrayList<File> filesToAdd = new ArrayList<File>();
+            File folder = new File("C:\\Users\\janru\\PycharmProjects\\TestCodeForCodeBubblesAR");
+            File[] listOfFiles = folder.listFiles();
+            // Add files to be archived into zip file
+            for (File file : listOfFiles) {
+                filesToAdd.add(file);
+                System.out.println(file.getName());
+            }
+
+            channelSftp.put(new FileInputStream("C:\\Users\\janru\\PycharmProjects\\TestCodeForCodeBubblesAR.zip"), "/home/jnruppenthal/Desktop/TestCodeForCodeBubblesAR.zip", ChannelSftp.OVERWRITE);
+
+            ChannelExec channelExec = (ChannelExec) session.openChannel("exec");
+//            channelExec.setCommand("unzip /home/jnruppenthal/Desktop/TestCodeForCodeBubblesAR.zip");
+//
+//            channelExec.setCommand("rm /home/jnruppenthal/Desktop/TestCodeForCodeBubblesAR.zip");
+
+        }
+        catch (JSchException e) {
+            e.printStackTrace();
+        }catch (Exception e) {
+            e.printStackTrace();
+        } finally {
+            System.out.println("Transfer Process Completed...");
+        }
 
         try
         {
-            main.connectToSSHServer(session, channelExec);
+            main.connectToSSHServer();
         } catch (JSchException e)
         {
             throw new RuntimeException(e);
@@ -31,39 +87,29 @@ public class Main
         {
             throw new RuntimeException(e);
         }
-
-
-        // TODO copy the folder from local to remote machine
-//        Process p = null;
-//        try
-//        {
-////            p = Runtime.getRuntime().exec("scp -r .\\..\\..\\PycharmProjects\\TestCodeForCodeBubblesAR jnruppenthal@169.254.224.166:/home/jnruppenthal/Desktop/");
-////            bw.flush();
-//
-////            String line;
-////            p = Runtime.getRuntime().exec( new String[]{"ls"});
-//
-//            ProcessBuilder builder = new ProcessBuilder(
-//                    "powershell.exe", "/c", "scp -r .\\..\\..\\PycharmProjects\\TestCodeForCodeBubblesAR jnruppenthal@169.254.224.166:/home/jnruppenthal/Desktop/");
-//            builder.redirectErrorStream(true);
-//            p = builder.start();
-//            BufferedWriter bw = new BufferedWriter(new OutputStreamWriter(p.getOutputStream()));
-//            bw.write(main.password + "\n");
-//            BufferedReader r = new BufferedReader(new InputStreamReader(p.getInputStream()));
-//            String line;
-//            while (true) {
-//                line = r.readLine();
-//                if (line == null) { break; }
-//                System.out.println(line);
-//            }
-//
-//        } catch (IOException e)
-//        {
-//            throw new RuntimeException(e);
-//        }
-
-
     }
+
+//    public static List<File> listf(String directoryName, ChannelSftp channelSftp, String sftpDirectory, String NewDir) throws JSchException, SftpException {
+//        File directory = new File(directoryName);
+//        List<File> resultList = new ArrayList<File>();
+//        File[] fList = directory.listFiles();
+//        resultList.addAll(Arrays.asList(fList));
+//        for (File file : fList) {
+//            if (file.isFile()) {
+//                String filename=file.getAbsolutePath();
+//                channelSftp.put(filename, NewDir, ChannelSftp.OVERWRITE);
+//                System.out.println(filename + " transferred to " + sftpDirectory );
+//            } else if (file.isDirectory()) {
+//                System.out.println(file.getAbsolutePath());
+//                NewDir = sftpDirectory+file.getName();
+//                channelSftp.mkdir(NewDir);
+//                System.out.println(NewDir + " Folder created ");
+//                resultList.addAll(listf(file.getAbsolutePath(), channelSftp, sftpDirectory, NewDir));
+//            }
+//        }
+//        System.out.println(fList);
+//        return resultList;
+//    }
 
 
     private void extractProperties()
@@ -85,17 +131,24 @@ public class Main
     }
 
 
-    private void connectToSSHServer(Session session, ChannelExec channelExec) throws JSchException, InterruptedException
+    private void connectToSSHServer() throws JSchException, InterruptedException
     {
         System.out.println("Start ssh now:");
 
-        session = new JSch().getSession(this.username, this.IPadress);
+        Session session = new JSch().getSession(this.username, this.IPadress);
         session.setPassword(this.password);
         session.setConfig("StrictHostKeyChecking", "no");
         session.connect();
 
-        channelExec = (ChannelExec) session.openChannel("exec");
-        channelExec.setCommand("ls");
+        ChannelExec channelExec = (ChannelExec) session.openChannel("exec");
+        channelExec.setCommand("cd Desktop");
+//        System.out.println("unzip the file");
+//        channelExec.setCommand("unzip /home/jnruppenthal/Desktop/TestCodeForCodeBubblesAR.zip");
+//        channelExec.setCommand("unzip /Desktop/TestCodeForCodeBubblesAR.zip");
+//        System.out.println("remove the file");
+//        channelExec.setCommand("rm /home/jnruppenthal/Desktop/TestCodeForCodeBubblesAR.zip");
+//        System.out.println("start pytho script");
+//        channelExec.setCommand("python /home/jnruppenthal/Desktop/TestCodeForCodeBubblesAR/classMain.py");
         ByteArrayOutputStream responseOutputStream = new ByteArrayOutputStream();
         channelExec.setOutputStream(responseOutputStream);
         channelExec.connect();
@@ -106,6 +159,66 @@ public class Main
         }
 
         String response = new String(responseOutputStream.toByteArray());
+        System.out.println(response);
+
+        channelExec.disconnect();
+
+//        channelExec.setCommand("cd Desktop");
+        System.out.println("unzip the file");
+        channelExec.setCommand("unzip /home/jnruppenthal/Desktop/TestCodeForCodeBubblesAR.zip");
+//        channelExec.setCommand("unzip /Desktop/TestCodeForCodeBubblesAR.zip");
+//        System.out.println("remove the file");
+//        channelExec.setCommand("rm /home/jnruppenthal/Desktop/TestCodeForCodeBubblesAR.zip");
+//        System.out.println("start pytho script");
+//        channelExec.setCommand("python /home/jnruppenthal/Desktop/TestCodeForCodeBubblesAR/classMain.py");
+        channelExec.setOutputStream(responseOutputStream);
+        channelExec.connect();
+
+        while (channelExec.isConnected())
+        {
+            Thread.sleep(100);
+        }
+
+        response = new String(responseOutputStream.toByteArray());
+        System.out.println(response);
+
+//        channelExec.setCommand("cd Desktop");
+//        System.out.println("unzip the file");
+//        channelExec.setCommand("unzip /home/jnruppenthal/Desktop/TestCodeForCodeBubblesAR.zip");
+//        channelExec.setCommand("unzip /Desktop/TestCodeForCodeBubblesAR.zip");
+        System.out.println("remove the file");
+        channelExec.setCommand("rm /home/jnruppenthal/Desktop/TestCodeForCodeBubblesAR.zip");
+//        System.out.println("start pytho script");
+//        channelExec.setCommand("python /home/jnruppenthal/Desktop/TestCodeForCodeBubblesAR/classMain.py");
+        channelExec.setOutputStream(responseOutputStream);
+        channelExec.connect();
+
+        while (channelExec.isConnected())
+        {
+            Thread.sleep(100);
+        }
+
+        response = new String(responseOutputStream.toByteArray());
+        System.out.println(response);
+
+
+//        channelExec.setCommand("cd Desktop");
+//        System.out.println("unzip the file");
+//        channelExec.setCommand("unzip /home/jnruppenthal/Desktop/TestCodeForCodeBubblesAR.zip");
+//        channelExec.setCommand("unzip /Desktop/TestCodeForCodeBubblesAR.zip");
+//        System.out.println("remove the file");
+//        channelExec.setCommand("rm /home/jnruppenthal/Desktop/TestCodeForCodeBubblesAR.zip");
+        System.out.println("start pytho script");
+        channelExec.setCommand("python /home/jnruppenthal/Desktop/TestCodeForCodeBubblesAR/classMain.py");
+        channelExec.setOutputStream(responseOutputStream);
+        channelExec.connect();
+
+        while (channelExec.isConnected())
+        {
+            Thread.sleep(100);
+        }
+
+        response = new String(responseOutputStream.toByteArray());
         System.out.println(response);
 
         session.disconnect();
