@@ -43,7 +43,7 @@ public class Main
         }
 
         // Thread does not end here?
-        System.exit(0);
+//        System.exit(0);
     }
 
     private void extractProperties()
@@ -81,19 +81,18 @@ public class Main
         System.out.println("sftp channel opened and connected.");
         ChannelSftp channelSftp = (ChannelSftp) channel;
 
-        String sftpDirectory = "/home/jnruppenthal/Desktop/";
-
-//            ZipFile zipFile = new ZipFile("C:\\Users\\janru\\PycharmProjects\\TestCodeForCodeBubblesAR.zip");
         ArrayList<File> filesToAdd = new ArrayList<File>();
         File folder = new File("C:\\Users\\janru\\PycharmProjects\\TestCodeForCodeBubblesAR");
         File[] listOfFiles = folder.listFiles();
         // Add files to be archived into zip file
         for (File file : listOfFiles) {
             filesToAdd.add(file);
-//                System.out.println(file.getName());
         }
 
         channelSftp.put(new FileInputStream("C:\\Users\\janru\\PycharmProjects\\TestCodeForCodeBubblesAR.zip"), "/home/jnruppenthal/Desktop/TestCodeForCodeBubblesAR.zip", ChannelSftp.OVERWRITE);
+
+        session.disconnect();
+        channelSftp.disconnect();
 
     }
 
@@ -131,8 +130,7 @@ public class Main
 
         session.disconnect();
         channelExec.disconnect();
-
-
+        
         System.out.println("End of ssh connection");
     }
 
