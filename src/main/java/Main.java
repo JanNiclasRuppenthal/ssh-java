@@ -56,7 +56,7 @@ public class Main
 
     private static void zipTheFile() throws IOException
     {
-        String[] command = {"CMD", "/C", "zip -r ..\\..\\PycharmProjects\\TestCodeForCodeBubblesAR.zip ..\\..\\PycharmProjects\\TestCodeForCodeBubblesAR"};
+        String[] command = {"powershell", "/C", "cd ..\\..\\PycharmProjects ; zip -r TestCodeForCodeBubblesAR.zip TestCodeForCodeBubblesAR"};
         ProcessBuilder probuilder = new ProcessBuilder( command );
 
         Process process = probuilder.start();
