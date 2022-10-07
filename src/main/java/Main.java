@@ -14,7 +14,7 @@ public class Main
     private final String ABSOLUTPATHTOPYCHARMPROJECTS = "C:\\Users\\janru\\PycharmProjects";
     private final String ZIPFILENAME = "TestCodeForCodeBubblesAR.zip";
     private final String PROJECTNAME = "TestCodeForCodeBubblesAR";
-    private final String DESTINATION = "/home/jnruppenthal/";
+    private final String DESTINATION = "/home/" + this.username + "/";
 
     public static void main(String[] args)
     {
