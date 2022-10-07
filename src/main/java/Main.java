@@ -21,6 +21,14 @@ public class Main
 
         try
         {
+            zipTheFile();
+        } catch (IOException e)
+        {
+            throw new RuntimeException(e);
+        }
+
+        try
+        {
             main.sftpToRemoteMachine();
         }
         catch (JSchException e) {
@@ -44,6 +52,33 @@ public class Main
 
         // Thread does not end here?
 //        System.exit(0);
+    }
+
+    private static void zipTheFile() throws IOException
+    {
+        String[] command = {"CMD", "/C", "zip -r ..\\..\\PycharmProjects\\TestCodeForCodeBubblesAR.zip ..\\..\\PycharmProjects\\TestCodeForCodeBubblesAR"};
+        ProcessBuilder probuilder = new ProcessBuilder( command );
+
+        Process process = probuilder.start();
+
+        //Read out dir output
+        InputStream is = process.getInputStream();
+        InputStreamReader isr = new InputStreamReader(is);
+        BufferedReader br = new BufferedReader(isr);
+        String line;
+        System.out.printf("Output of running %s is:\n",
+                Arrays.toString(command));
+        while ((line = br.readLine()) != null) {
+            System.out.println(line);
+        }
+
+        //Wait to get exit value
+        try {
+            int exitValue = process.waitFor();
+            System.out.println("\n\nExit Value is " + exitValue);
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
     }
 
     private void extractProperties()
@@ -130,7 +165,7 @@ public class Main
 
         session.disconnect();
         channelExec.disconnect();
-        
+
         System.out.println("End of ssh connection");
     }
 
